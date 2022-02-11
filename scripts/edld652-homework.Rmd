@@ -1,0 +1,49 @@
+---
+title: "EDLD 652 Homework"
+author: "Ksenia Gordeeva, Rebeccca Gordon, Amy Warnock"
+date: "2/21/2022"
+output:
+  html_document:
+   code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE)
+
+library(tidyverse)
+
+```
+## Question 1
+Use the transit costs data to reproduce the following plot. To do so, you will need to do a small amount of data cleaning, then calculate the means and standard errors (of the mean) for each country. Please filter to only counties with at least three observations. To use actual country names, rather than abbreviations, join your dataset with the output from the following
+```{r}
+
+```
+## Question 2
+Visualize the same relation, but displaying the uncertainty using an alternative method of your choosing.
+```{r}
+
+```
+## Question 3
+Compute the mean length and real_cost by city. Reproduce the following plot.
+```{r}
+
+```
+## Question 4
+Using basically the same data, reproduce the following plot. Note you’ll need the country_name column in your dataset.
+```{r}
+
+```
+## Question 5
+Use the crime dataset to run the following code and fit the corresponding model. Note, it may take a moment to run.
+```{r}
+
+```
+
+
+
+
+
+
+
+
