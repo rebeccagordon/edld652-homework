@@ -8,32 +8,120 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE,
-                      message = FALSE)
+knitr::opts_chunk$set(echo = FALSE,
+                      message = FALSE,
+											warning = FALSE)
 
 library(tidyverse)
+library(rio)
+library(here)
+library(ggtext)
+library(extrafont)
+library(colorspace)
 
 ```
+
 ## Question 1
 Use the transit costs data to reproduce the following plot. To do so, you will need to do a small amount of data cleaning, then calculate the means and standard errors (of the mean) for each country. Please filter to only counties with at least three observations. To use actual country names, rather than abbreviations, join your dataset with the output from the following
-```{r}
+```{r transit-costs-se}
+transit_cost <- read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-01-05/transit_cost.csv')
+#install.packages("tidytuesdayR")
+#transit_cost <- tidytuesdayR::tt_load(2021, week = 2)
+
+
+#install.packages("countrycode")
+country_codes <- countrycode::codelist %>% 
+	select(country_name = country.name.en, country = ecb)
+
+country2 <- right_join(country_codes, transit_cost)
+
+country2  %>% group_by(country_name) %>% count(country_name)
+
+transit2 <- country2 %>% 
+	group_by(country_name) %>% 
+	summarize(
+		mean_cost = mean(as.numeric(real_cost), na.rm = TRUE),
+		se_cost = sd(real_cost, na.rm = TRUE)/ sqrt(n()),
+		lower = as.numeric(mean_cost) + qnorm(0.025) * se_cost,
+		upper = as.numeric(mean_cost) + qnorm(0.975) * se_cost,
+		N = n()
+	) %>% 
+	mutate(country_name = fct_reorder(country_name, mean_cost)) %>% 
+	na.omit() %>% 
+	filter(N>2)
+
+
+ggplot(transit2, aes(mean_cost, country_name)) +
+	geom_linerange(aes(xmin = lower, xmax = upper)) +
+	geom_point(color = "#6495ed") +
+	scale_x_continuous(labels = scales::comma,
+										 limits = c(0,35000),
+									   expand = c(0, 0)) +
+	labs(
+		title = "Cost to build transit systems vary by country",
+		caption = "Data provided through #tidytuesday by the Transit Costs Project",
+		x = "Real Cost (In millions of dollars)",
+		y = "Country"
+	) + 
+	theme_minimal() + 
+	theme(plot.subtitle = element_markdown())
 
 ```
+
 ## Question 2
 Visualize the same relation, but displaying the uncertainty using an alternative method of your choosing.
-```{r}
+```{r tranist-costs-CI}
+ggplot(transit2, aes(country_name, mean_cost)) +
+	geom_hline(yintercept = 0,
+						 color = "white",
+						 linetype = 2) +
+	geom_errorbar(aes(ymin = mean_cost + qnorm(.025)*se_cost, 
+										ymax = mean_cost + qnorm(.975)*se_cost,
+										color = "95%"),
+								width = 0.2,
+								size = 0.8) + 
+	geom_errorbar(aes(ymin = mean_cost + qnorm(.05)*se_cost, 
+										ymax = mean_cost + qnorm(.95)*se_cost,
+										color = "90%"),
+								width = 0.2,
+								size = 1.2) + 
+	geom_errorbar(aes(ymin = mean_cost + qnorm(.1)*se_cost, 
+										ymax = mean_cost + qnorm(.9)*se_cost,
+										color = "80%"),
+								width = 0.2,
+								size = 1.6) + 
+	scale_color_manual("Confidence Interval",
+										 values = c("#3BC5FB",
+										 					 "#F78A2F",
+										 					 "#F31E1E")) +
+	scale_y_continuous(labels = scales::comma,
+										 limits = c(0,35000),
+										 expand = c(0, 0)) +
+	geom_point(alpha = .5) +
+	coord_flip() +
+	labs(
+		title = "Cost to build transit systems vary by country",
+		caption = "Data provided through #tidytuesday by the Transit Costs Project",
+		y = "Real Cost (In millions of dollars)",
+		x = "Country"
+	) + 
+	theme_minimal() + 
+	theme(plot.subtitle = element_markdown())
 
 ```
+
 ## Question 3
 Compute the mean length and real_cost by city. Reproduce the following plot.
 ```{r}
 
 ```
+
 ## Question 4
 Using basically the same data, reproduce the following plot. Note you’ll need the country_name column in your dataset.
 ```{r}
 
 ```
+
 ## Question 5
 Use the crime dataset to run the following code and fit the corresponding model. Note, it may take a moment to run.
 ```{r}
