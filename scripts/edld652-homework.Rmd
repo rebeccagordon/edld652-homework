@@ -15,10 +15,11 @@ knitr::opts_chunk$set(echo = FALSE,
 library(tidyverse)
 library(rio)
 library(here)
+#install.packages("ggtext")
 library(ggtext)
+#install.packages("extrafont")
 library(extrafont)
 library(colorspace)
-
 ```
 
 ## Question 1
