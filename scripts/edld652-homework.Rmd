@@ -1,15 +1,14 @@
 ---
 title: "EDLD 652 Homework"
 author: "Ksenia Gordeeva, Rebeccca Gordon, Amy Warnock"
-date: "2/21/2022"
+date: "2/28/2022"
 output:
   html_document:
    code_folding: hide
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE,
-                      message = FALSE,
+knitr::opts_chunk$set(message = FALSE,
 											warning = FALSE)
 
 library(tidyverse)
@@ -20,11 +19,13 @@ library(ggtext)
 #install.packages("extrafont")
 library(extrafont)
 library(colorspace)
+library(janitor)
+library(ggtext)
 ```
 
 ## Question 1
 Use the transit costs data to reproduce the following plot. To do so, you will need to do a small amount of data cleaning, then calculate the means and standard errors (of the mean) for each country. Please filter to only counties with at least three observations. To use actual country names, rather than abbreviations, join your dataset with the output from the following
-```{r transit-costs-se}
+```{r transit-costs-se, results = 'hide'}
 transit_cost <- read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-01-05/transit_cost.csv')
 #install.packages("tidytuesdayR")
 #transit_cost <- tidytuesdayR::tt_load(2021, week = 2)
@@ -36,7 +37,9 @@ country_codes <- countrycode::codelist %>%
 
 country2 <- right_join(country_codes, transit_cost)
 
-country2  %>% group_by(country_name) %>% count(country_name)
+country2 %>% 
+  group_by(country_name) %>% 
+  count(country_name)
 
 transit2 <- country2 %>% 
 	group_by(country_name) %>% 
@@ -49,15 +52,17 @@ transit2 <- country2 %>%
 	) %>% 
 	mutate(country_name = fct_reorder(country_name, mean_cost)) %>% 
 	na.omit() %>% 
-	filter(N>2)
+	filter(N > 2)
+```
 
-
+```{r transit-costs-se-plot, fig.width = 6, fig.height = 8}
 ggplot(transit2, aes(mean_cost, country_name)) +
-	geom_linerange(aes(xmin = lower, xmax = upper)) +
+	geom_linerange(aes(xmin = lower, xmax = upper), 
+	               color = "gray30", size = .5) +
 	geom_point(color = "#6495ed") +
 	scale_x_continuous(labels = scales::comma,
-										 limits = c(0,35000),
 									   expand = c(0, 0)) +
+  coord_cartesian(xlim = c(0, 35000)) +
 	labs(
 		title = "Cost to build transit systems vary by country",
 		caption = "Data provided through #tidytuesday by the Transit Costs Project",
@@ -65,13 +70,16 @@ ggplot(transit2, aes(mean_cost, country_name)) +
 		y = "Country"
 	) + 
 	theme_minimal() + 
-	theme(plot.subtitle = element_markdown())
-
+	theme(plot.subtitle = element_markdown(),
+	      panel.grid.major.y = element_blank(),
+	      panel.grid.minor.x = element_blank()
+	      ) +
+  theme(plot.title.position = "plot")  
 ```
 
 ## Question 2
 Visualize the same relation, but displaying the uncertainty using an alternative method of your choosing.
-```{r tranist-costs-CI}
+```{r tranist-costs-CI, fig.width = 7.8, fig.height = 8}
 ggplot(transit2, aes(country_name, mean_cost)) +
 	geom_hline(yintercept = 0,
 						 color = "white",
@@ -96,7 +104,7 @@ ggplot(transit2, aes(country_name, mean_cost)) +
 										 					 "#F78A2F",
 										 					 "#F31E1E")) +
 	scale_y_continuous(labels = scales::comma,
-										 limits = c(0,35000),
+	                   limits = c(0, 35000),
 										 expand = c(0, 0)) +
 	geom_point(alpha = .5) +
 	coord_flip() +
@@ -107,8 +115,11 @@ ggplot(transit2, aes(country_name, mean_cost)) +
 		x = "Country"
 	) + 
 	theme_minimal() + 
-	theme(plot.subtitle = element_markdown())
-
+	theme(plot.subtitle = element_markdown(),
+	      panel.grid.major.y = element_blank(),
+	      panel.grid.minor.x = element_blank()
+	      ) +
+  theme(plot.title.position = "plot") 
 ```
 
 ## Question 3
@@ -124,15 +135,93 @@ Using basically the same data, reproduce the following plot. Note you’ll need 
 ```
 
 ## Question 5
-Use the crime dataset to run the following code and fit the corresponding model. Note, it may take a moment to run.
-```{r}
 
+Replicate this plot, but compare the Barnum neighborhood to the Barnum-West neighborhood. (Note: I decided to start with replicating the original quantile dotplot to make sure I was on the right track.)
+```{r q5-data}
+#FYI: I added the crime.csv file to the .gitignore file, so it will not be in the "data" folder pulled from github
+
+crime <- import(here("data", "crime.csv")) %>%
+  as_tibble() %>% 
+  clean_names()
+```
+
+```{r q5-model}
+model_data <- crime %>% 
+  mutate(neighborhood_id = relevel(factor(neighborhood_id), ref = "barnum"))
+
+m <- glm(is_crime ~ neighborhood_id, 
+         data = model_data,
+         family = "binomial")
+
+tidied <- broom::tidy(m)
+```
+
+```{r regis-prep}
+regis <- tidied %>% 
+  filter(term == "neighborhood_idregis")
+
+discretized <- data.frame(x = qnorm(ppoints(20), 
+                                    mean = regis$estimate,
+                                    sd = regis$std.error)) %>%
+  mutate(crimeprob = ifelse(x > 0, "#21B48E", "#8A7D98"))
+```
+
+```{r regis-plot, fig.width = 6, fig.height = 7}
+discretized %>% 
+  ggplot(aes(x)) +
+  geom_dotplot(aes(fill = crimeprob), binwidth = .0425) +
+  scale_fill_identity(guide = "none") +
+  geom_vline(xintercept = 0,
+             color = "#D04244",
+             size = 1) +
+  theme_minimal() +
+  scale_y_continuous(expand = c(0,0), name = "", breaks = NULL) + 
+  coord_cartesian(ylim = c(0, .8)) +
+  scale_x_continuous(breaks = c(-0.10, -.05, 0, .05, .10)) +
+  labs(x = "Difference in log odds of a crime being committed",
+       caption = "Each ball represents 5% probability",
+       title = "</span>Probability of differential crime rates between neighborhoods<br></span><span style = 'color:#8A7D98;'>Regis</span>
+compared to <span style = 'color:#21B48E;'>Barnum</span>"
+  ) +
+  theme(
+    text = element_text(),
+    plot.title.position = "plot",
+    plot.title = element_markdown(lineheight = 1.2)
+  )
+```
+
+```{r barnumwest-prep}
+barnumwest <- tidied %>% 
+  filter(term == "neighborhood_idbarnum-west")
+
+discretized_bnw <- data.frame(x = qnorm(ppoints(20), 
+                                        mean = barnumwest$estimate,
+                                        sd = barnumwest$std.error)) %>%
+  mutate(crimeprob = ifelse(x > 0, "#21B48E", "#8A7D98"))
 ```
 
 
-
-
-
-
-
+```{r barnumwest-plot, fig.width = 6, fig.height = 6.5}
+discretized_bnw %>% 
+  ggplot(aes(x)) +
+  geom_dotplot(aes(fill = crimeprob), binwidth = .037) +
+  scale_fill_identity(guide = "none") +
+  geom_vline(xintercept = 0,
+             color = "#D04244",
+             size = 1.5) +
+  theme_minimal() +
+  scale_y_continuous(expand = c(0,0), name = "", breaks = NULL) + 
+  coord_cartesian(ylim = c(0, .75)) +
+  scale_x_continuous(breaks = c(-0.10, -.05, 0, .05, .10)) +
+  labs(x = "Difference in log odds of a crime being committed",
+       caption = "Each ball represents 5% probability",
+       title = "</span>Probability of differential crime rates between neighborhoods<br><span style = 'color:#8A7D98 ;'>West-Barnum</span>
+compared to <span style = 'color:#21B48E;'>Barnum</span>"
+  ) + 
+  theme(
+    text = element_text(),
+    plot.title.position = "plot",
+    plot.title = element_markdown(lineheight = 1.2)
+  )
+```
 
