@@ -180,8 +180,8 @@ discretized %>%
   scale_x_continuous(breaks = c(-0.10, -.05, 0, .05, .10)) +
   labs(x = "Difference in log odds of a crime being committed",
        caption = "Each ball represents 5% probability",
-       title = "</span>Probability of differential crime rates between neighborhoods<br></span><span style = 'color:#8A7D98;'>Regis</span>
-compared to <span style = 'color:#21B48E;'>Barnum</span>"
+       title = "</span>Probability of differential crime rates between neighborhoods<br></span><span style = 'color:#8A7D98;'>**Regis**</span>
+compared to <span style = 'color:#21B48E;'>**Barnum**</span>"
   ) +
   theme(
     text = element_text(),
@@ -215,8 +215,8 @@ discretized_bnw %>%
   scale_x_continuous(breaks = c(-0.10, -.05, 0, .05, .10)) +
   labs(x = "Difference in log odds of a crime being committed",
        caption = "Each ball represents 5% probability",
-       title = "</span>Probability of differential crime rates between neighborhoods<br><span style = 'color:#8A7D98 ;'>West-Barnum</span>
-compared to <span style = 'color:#21B48E;'>Barnum</span>"
+       title = "</span>Probability of differential crime rates between neighborhoods<br><span style = 'color:#8A7D98 ;'>**West-Barnum**</span>
+compared to <span style = 'color:#21B48E;'>**Barnum**</span>"
   ) + 
   theme(
     text = element_text(),
