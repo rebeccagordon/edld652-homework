@@ -21,6 +21,9 @@ library(extrafont)
 library(colorspace)
 library(janitor)
 library(ggtext)
+library(ggrepel)
+library(gghighlight)
+library(ggforce)
 ```
 
 ## Question 1
@@ -124,16 +127,90 @@ ggplot(transit2, aes(country_name, mean_cost)) +
 
 ## Question 3
 Compute the mean length and real_cost by city. Reproduce the following plot.
-```{r}
+```{r q3-data}
+transit <- read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-01-05/transit_cost.csv')
 
+country2 <- right_join(country_codes, transit)
+
+transit <- country2 %>% 
+  select(country,
+         country_name,
+         city, 
+         real_cost,
+         length) 
+
+transit2 <- transit %>% 
+	group_by(city, country, country_name) %>% 
+	summarize(
+		mean_cost = mean(as.numeric(real_cost), na.rm = TRUE),
+		mean_length = mean(length, na.rm = TRUE), 
+		line_number = n())  %>% 
+	na.omit() 
+```
+```{r q3-plot}
+ggplot(data = transit2, aes(x = mean_length, y = mean_cost)) +
+    geom_point(aes(size = line_number), color =  "#9932CC", alpha = 0.9) +
+    scale_y_log10(labels = scales::dollar) +
+    scale_x_log10() +
+  scale_size_binned(breaks=c(1,5,10,20,25),
+                    labels=c("1","5","10","20","25"),
+                    limits = c(1,25)) +
+    labs(size="Number of transit systems",
+         title = "Longer transit systems tend to cost more",
+         subtitle = "<span style = 'color: #9932CC;'>India</span> has among the most transit systems in the world",
+         x = 'Average length',
+         y = 'Average cost',
+        caption = "Note the axis are on  the log scale") +
+    gghighlight(country == "IN") +
+  geom_text_repel(data = filter (transit2,
+                                 country == "IN"),
+                  aes(label = city),
+                  min.segment.length = 0,
+                  box.padding = 0.75)+
+ guides(size = guide_bins(direction = "horizontal"))+
+  theme_minimal(base_size = 15) +
+  theme(plot.title.position = "plot", 
+        legend.position = "bottom",
+        plot.subtitle = element_markdown())
 ```
 
 ## Question 4
 Using basically the same data, reproduce the following plot. Note you’ll need the country_name column in your dataset.
-```{r}
-
+```{r q4}
+ggplot(data = transit2, aes(x = mean_length, y = mean_cost)) +
+  geom_point(aes(size = line_number), color =  "gray80", alpha = 0.9) +
+  geom_point(data = filter(transit2, country == "US"),
+             color = "#1E90FF") +
+  scale_y_log10(labels = scales::dollar) +
+  scale_x_log10() +
+  geom_mark_ellipse(aes(group = country_name, label = country_name),
+                    data = filter(transit2,
+                                  country_name == "United States"),
+                    label.colour = "#1E90FF",
+                    con.colour = "#C55644",
+                    color = "#C55644") +
+  scale_size_binned(breaks=c(1,5,10,20,25),
+                    labels=c("1","5","10","20","25"),
+                    limits = c(1,25)) +
+    labs(size="Number of transit systems",
+         title = "Longer transit systems tend to cost more",
+        x = 'Average length',
+        y = 'Average cost',
+        caption = "Note the axis are on  the log scale") +
+  geom_label_repel(data = filter (transit2,
+                                 country == "US"),
+                   aes(label = city),
+                   min.segment.length = -0.5,
+                   box.padding = 0.75,
+                   color = "gray70") +
+  guides(size = guide_bins(direction = "horizontal")) +
+  theme_minimal(base_size = 10) +
+  theme(plot.title.position = "plot", 
+        legend.position = "bottom",
+        plot.title = element_text(size = 20),
+        axis.title = element_text(size = 14),
+        legend.title = element_text(size = 14))
 ```
-
 ## Question 5
 
 Replicate this plot, but compare the Barnum neighborhood to the Barnum-West neighborhood. (Note: I decided to start with replicating the original quantile dotplot to make sure I was on the right track.)
