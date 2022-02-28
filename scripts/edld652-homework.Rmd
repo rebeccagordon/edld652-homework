@@ -160,7 +160,7 @@ ggplot(data = transit2, aes(x = mean_length, y = mean_cost)) +
          subtitle = "<span style = 'color: #9932CC;'>India</span> has among the most transit systems in the world",
          x = 'Average length',
          y = 'Average cost',
-        caption = "Note the axis are on  the log scale") +
+        caption = "Note the axis are on the log scale") +
     gghighlight(country == "IN") +
   geom_text_repel(data = filter (transit2,
                                  country == "IN"),
@@ -196,7 +196,7 @@ ggplot(data = transit2, aes(x = mean_length, y = mean_cost)) +
          title = "Longer transit systems tend to cost more",
         x = 'Average length',
         y = 'Average cost',
-        caption = "Note the axis are on  the log scale") +
+        caption = "Note the axis are on the log scale") +
   geom_label_repel(data = filter (transit2,
                                  country == "US"),
                    aes(label = city),
